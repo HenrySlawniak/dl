@@ -197,14 +197,14 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 	var out *os.File
 
 	if FileExists(fileloc) {
-		out, err = os.OpenFile(fileloc, os.O_RDWR, os.FileMode(int(0740)))
+		out, err = os.OpenFile(fileloc, os.O_RDWR, os.FileMode(int(0775)))
 		if err != nil {
 			debug.PrintStack()
 			return 0, err
 		}
 		defer out.Close()
 	} else {
-		os.MkdirAll(filepath.Dir(fileloc), os.FileMode(6700))
+		os.MkdirAll(filepath.Dir(fileloc), os.FileMode(0775))
 		out, err = os.Create(fileloc)
 		if err != nil {
 			debug.PrintStack()
