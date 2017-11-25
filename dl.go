@@ -23,14 +23,13 @@ package dl
 import (
 	"fmt"
 	"github.com/dustin/go-humanize"
-	"gopkg.in/cheggaaa/pb.v2"
+	"github.com/go-playground/log"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strconv"
 )
 
@@ -56,7 +55,6 @@ func FileExists(filename string) bool {
 func GetBodyFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cookie) ([]byte, error) {
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		debug.PrintStack()
 		return nil, err
 	}
 
@@ -70,7 +68,6 @@ func GetBodyFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 
 	resp, err := client.Do(req)
 	if err != nil {
-		debug.PrintStack()
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -82,7 +79,7 @@ func GetBodyFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 func GetRespFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cookie) (*http.Response, error) {
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		debug.PrintStack()
+
 		return nil, err
 	}
 
@@ -101,7 +98,7 @@ func GetRespFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies *[]*http.Cookie) (int64, error) {
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 
@@ -120,7 +117,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 
 	head, err := client.Do(req)
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 	head.Body.Close()
@@ -138,13 +135,13 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 
 	f, err := os.Open(fileloc)
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 
 	stat, err := f.Stat()
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 	f.Close()
@@ -160,7 +157,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, cookies *[]*http.Cookie) (int64, error) {
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 
@@ -174,24 +171,17 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 
 	resp, err := client.Do(req)
 	if err != nil {
-		debug.PrintStack()
+
 		return 0, err
 	}
 	defer resp.Body.Close()
 
+	log.Debug(resp.StatusCode, ": ", resp.Status)
+	log.Debug(resp.Header.Get("Content-Type"))
+
 	length, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 0)
 	if err != nil {
-		length = 0
-	}
-
-	var reader io.ReadCloser
-
-	if length > 0 {
-		bar := pb.New64(length)
-		reader = bar.NewProxyReader(resp.Body)
-		bar.Start()
-	} else {
-		reader = resp.Body
+		log.Debugf("No Content-Length Header for %s", u.String())
 	}
 
 	var out *os.File
@@ -199,7 +189,7 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 	if FileExists(fileloc) {
 		out, err = os.OpenFile(fileloc, os.O_RDWR, os.FileMode(int(0775)))
 		if err != nil {
-			debug.PrintStack()
+
 			return 0, err
 		}
 		defer out.Close()
@@ -207,7 +197,7 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 		os.MkdirAll(filepath.Dir(fileloc), os.FileMode(0775))
 		out, err = os.Create(fileloc)
 		if err != nil {
-			debug.PrintStack()
+
 			return 0, err
 		}
 		defer out.Close()
@@ -215,5 +205,5 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 
 	fmt.Printf("Downloading %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
 
-	return io.Copy(out, reader)
+	return io.Copy(out, resp.Body)
 }
