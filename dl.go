@@ -21,7 +21,6 @@
 package dl
 
 import (
-	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/go-playground/log"
 	"io"
@@ -147,7 +146,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 	f.Close()
 
 	if stat.Size() == length {
-		fmt.Printf("Skipping %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
+		log.Noticef("Skipping %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
 		return 0, nil
 	}
 
@@ -176,12 +175,9 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 	}
 	defer resp.Body.Close()
 
-	log.Debug(resp.StatusCode, ": ", resp.Status)
-	log.Debug(resp.Header.Get("Content-Type"))
-
 	length, err := strconv.ParseInt(resp.Header.Get("Content-Length"), 10, 0)
 	if err != nil {
-		log.Debugf("No Content-Length Header for %s", u.String())
+		log.Warnf("No Content-Length Header for %s", u.String())
 	}
 
 	var out *os.File
@@ -203,7 +199,7 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 		defer out.Close()
 	}
 
-	fmt.Printf("Downloading %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
+	log.Infof("Downloading %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
 
 	return io.Copy(out, resp.Body)
 }
