@@ -34,7 +34,7 @@ import (
 
 var (
 	userAgent = "dl v0.0.1"
-	client    = &http.Client{}
+	Client    = &http.Client{}
 )
 
 // SetUserAgent will set the user agent to use with the http download client
@@ -65,7 +65,7 @@ func GetBodyFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 		req.Header.Set(k, v)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func GetRespFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 		req.Header.Set(k, v)
 	}
 
-	return client.Do(req)
+	return Client.Do(req)
 }
 
 // DownloadFile will download the url to fileloc
@@ -114,7 +114,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 		return writeToFileFromURL(fileloc, u, headers, cookies)
 	}
 
-	head, err := client.Do(req)
+	head, err := Client.Do(req)
 	if err != nil {
 
 		return 0, err
@@ -168,7 +168,7 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 		req.Header.Set(k, v)
 	}
 
-	resp, err := client.Do(req)
+	resp, err := Client.Do(req)
 	if err != nil {
 
 		return 0, err
