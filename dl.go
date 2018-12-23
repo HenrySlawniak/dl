@@ -22,7 +22,7 @@ package dl
 
 import (
 	"github.com/dustin/go-humanize"
-	"github.com/go-playground/log"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -34,12 +34,23 @@ import (
 
 var (
 	userAgent = "dl v0.0.1"
-	Client    = &http.Client{}
+	client    = &http.Client{}
+	log       = logrus.New()
 )
 
 // SetUserAgent will set the user agent to use with the http download client
 func SetUserAgent(ua string) {
 	userAgent = ua
+}
+
+// SetClient sets the http client used by the dl package
+func SetClient(c *http.Client) {
+	client = c
+}
+
+// SetLogger sets the logger used by the dl package
+func SetLogger(l *logrus.Logger) {
+	log = l
 }
 
 // FileExists checks if the file already exists on disk
@@ -65,7 +76,7 @@ func GetBodyFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 		req.Header.Set(k, v)
 	}
 
-	resp, err := Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +101,7 @@ func GetRespFromURL(u *url.URL, headers map[string]string, cookies *[]*http.Cook
 		req.Header.Set(k, v)
 	}
 
-	return Client.Do(req)
+	return client.Do(req)
 }
 
 // DownloadFile will download the url to fileloc
@@ -114,7 +125,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 		return writeToFileFromURL(fileloc, u, headers, cookies)
 	}
 
-	head, err := Client.Do(req)
+	head, err := client.Do(req)
 	if err != nil {
 
 		return 0, err
@@ -146,7 +157,7 @@ func DownloadFile(fileloc string, u *url.URL, headers map[string]string, cookies
 	f.Close()
 
 	if stat.Size() == length {
-		log.Noticef("Skipping %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
+		log.Infof("Skipping %s (%s)\n", filepath.Base(fileloc), humanize.Bytes(uint64(length)))
 		return 0, nil
 	}
 
@@ -168,7 +179,7 @@ func writeToFileFromURL(fileloc string, u *url.URL, headers map[string]string, c
 		req.Header.Set(k, v)
 	}
 
-	resp, err := Client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 
 		return 0, err
